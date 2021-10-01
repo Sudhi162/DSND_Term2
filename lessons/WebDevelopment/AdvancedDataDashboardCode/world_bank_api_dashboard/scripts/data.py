@@ -38,7 +38,7 @@ def return_figures(countries=country_default):
   country_filter = ';'.join(country_filter)
 
   # World Bank indicators of interest for pulling data
-  indicators = ['AG.LND.ARBL.HA.PC', 'SP.RUR.TOTL.ZS', 'SP.RUR.TOTL.ZS', 'AG.LND.FRST.ZS']
+  indicators = ['SE.PRM.UNER.FE', 'SE.ADT.LITR.FE.ZS', 'SE.SEC.PROG.FE.ZS', 'SL.TLF.TOTL.FE.ZS']
 
   data_frames = [] # stores the data frames with the indicator data of interest
   urls = [] # url endpoints for the World Bank API
@@ -69,7 +69,7 @@ def return_figures(countries=country_default):
 
   # filter and sort values for the visualization
   # filtering plots the countries in decreasing order by their values
-  df_one = df_one[(df_one['date'] == '2015') | (df_one['date'] == '1990')]
+  df_one = df_one[(df_one['date'] == '2020') | (df_one['date'] == '2000')]
   df_one.sort_values('value', ascending=False, inplace=True)
 
   # this  country list is re-used by all the charts to ensure legends have the same
@@ -88,34 +88,39 @@ def return_figures(countries=country_default):
           )
       )
 
-  layout_one = dict(title = 'Change in Hectares Arable Land <br> per Person 1990 to 2015',
+  layout_one = dict(title = 'Children out of school, primary, female <br> per Person 2000 to 2020',
                 xaxis = dict(title = 'Year',
                   autotick=False, tick0=1990, dtick=25),
-                yaxis = dict(title = 'Hectares'),
+                yaxis = dict(title = 'Million'),
                 )
 
-  # second chart plots ararble land for 2015 as a bar chart
+  # second chart plots Literacy rate, adult female (% of females ages 15 and above)
   graph_two = []
-  df_one.sort_values('value', ascending=False, inplace=True)
-  df_one = df_one[df_one['date'] == '2015'] 
+  df_two = pd.DataFrame(data_frames[1])
+  df_two = df_two[(df_two['date'] == '2020') | (df_two['date'] == '2000')]
+  df_two.sort_values('value', ascending=False, inplace=True)
 
-  graph_two.append(
-      go.Bar(
-      x = df_one.country.tolist(),
-      y = df_one.value.tolist(),
+  for country in countrylist:
+      x_val = df_two[df_two['country'] == country].date.tolist()
+      y_val =  df_two[df_two['country'] == country].value.tolist()
+      graph_two.append(
+          go.Scatter(
+          x = x_val,
+          y = y_val,
+          mode = 'lines',
+          name = country
+          )
       )
-  )
 
-  layout_two = dict(title = 'Hectares Arable Land per Person in 2015',
+  layout_two = dict(title = 'Literacy rate, adult female (% of females ages 15 and above)',
                 xaxis = dict(title = 'Country',),
-                yaxis = dict(title = 'Hectares per person'),
+                yaxis = dict(title = 'Percent'),
                 )
 
-  # third chart plots percent of population that is rural from 1990 to 2015
+  # third chart plots Progression to secondary school, female (%)
   graph_three = []
-  df_three = pd.DataFrame(data_frames[1])
-  df_three = df_three[(df_three['date'] == '2015') | (df_three['date'] == '1990')]
-
+  df_three = pd.DataFrame(data_frames[2])  
+  df_three = df_three[(df_three['date'] == '2020') | (df_three['date'] == '2000')]
   df_three.sort_values('value', ascending=False, inplace=True)
   for country in countrylist:
       x_val = df_three[df_three['country'] == country].date.tolist()
@@ -129,38 +134,22 @@ def return_figures(countries=country_default):
           )
       )
 
-  layout_three = dict(title = 'Change in Rural Population <br> (Percent of Total Population)',
+  layout_three = dict(title = 'Progression to secondary school,<br> female (%)',
                 xaxis = dict(title = 'Year',
                   autotick=False, tick0=1990, dtick=25),
                 yaxis = dict(title = 'Percent'),
                 )
 
-  # fourth chart shows rural population vs arable land as percents
+  # fourth chart shows female (% of total labor force)
   graph_four = []
-  df_four_a = pd.DataFrame(data_frames[2])
-  df_four_a = df_four_a[['country', 'date', 'value']]
-  
-  df_four_b = pd.DataFrame(data_frames[3])
-  df_four_b = df_four_b[['country', 'date', 'value']]
+  df_four = pd.DataFrame(data_frames[3])
+  df_four = pd.DataFrame(data_frames[1])
+  df_four = df_four[(df_four['date'] == '2020') | (df_four['date'] == '2000')]
 
-  df_four = df_four_a.merge(df_four_b, on=['country', 'date'])
-  df_four.sort_values('date', ascending=True, inplace=True)
-
-  plotly_default_colors = plotly.colors.DEFAULT_PLOTLY_COLORS
-
-  for i, country in enumerate(countrylist):
-
-      current_color = []
-
-      x_val = df_four[df_four['country'] == country].value_x.tolist()
-      y_val = df_four[df_four['country'] == country].value_y.tolist()
-      years = df_four[df_four['country'] == country].date.tolist()
-      country_label = df_four[df_four['country'] == country].country.tolist()
-
-      text = []
-      for country, year in zip(country_label, years):
-          text.append(str(country) + ' ' + str(year))
-
+  df_four.sort_values('value', ascending=False, inplace=True)
+  for country in countrylist:
+      x_val = df_four[df_four['country'] == country].date.tolist()
+      y_val =  df_four[df_four['country'] == country].value.tolist()      
       graph_four.append(
           go.Scatter(
           x = x_val,
@@ -172,9 +161,9 @@ def return_figures(countries=country_default):
           )
       )
 
-  layout_four = dict(title = '% of Population that is Rural versus <br> % of Land that is Forested <br> 1990-2015',
-                xaxis = dict(title = '% Population that is Rural', range=[0,100], dtick=10),
-                yaxis = dict(title = '% of Area that is Forested', range=[0,100], dtick=10),
+  layout_four = dict(title = 'Labor force, female <br>(% of total labor force)',
+                xaxis = dict(title = 'Year', range=[0,100], dtick=10),
+                yaxis = dict(title = 'percent', range=[0,100], dtick=10),
                 )
 
 
